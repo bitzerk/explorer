@@ -12,6 +12,9 @@ var express = require('express')
   , locale = require('./lib/locale')
   , request = require('request');
 
+const Services = require('./services');
+Services.initialize();
+
 var app = express();
 
 // bitcoinapi
