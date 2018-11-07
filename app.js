@@ -1,5 +1,4 @@
 var express = require('express')
-  , cluster = require('cluster')
   , path = require('path')
   , bitcoinapi = require('bitcoin-node-api')
   , favicon = require('static-favicon')
@@ -12,11 +11,6 @@ var express = require('express')
   , db = require('./lib/database')
   , locale = require('./lib/locale')
   , request = require('request');
-
-if(cluster.isMaster) {
-  const Services = require('./services');
-  Services.initialize();
-}
 
 var app = express();
 

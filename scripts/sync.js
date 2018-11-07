@@ -16,6 +16,12 @@ dbString = dbString + '@' + settings.dbsettings.address;
 dbString = dbString + ':' + settings.dbsettings.port;
 dbString = dbString + '/' + settings.dbsettings.database;
 
+function killProcess(exitCode=0) {
+  if(!module.parent) {
+    process.exit(exitCode);
+  }
+}
+
 // displays usage and exits
 function usage() {
   console.log('Usage: node scripts/sync.js [database] [mode]');
@@ -35,7 +41,7 @@ function usage() {
   console.log('* If check mode finds missing data(ignoring new data since last sync),'); 
   console.log('  index_timeout in settings.json is set too low.')
   console.log('');
-  process.exit(0);
+  killProcess(0);
 }
 
 function create_lock(cb) {
@@ -44,7 +50,7 @@ function create_lock(cb) {
     fs.appendFile(fname, process.pid, function (err) {
       if (err) {
         console.log("Error: unable to create %s", fname);
-        process.exit(1);
+        killProcess(1);
       } else {
         return cb();
       }
@@ -60,7 +66,7 @@ function remove_lock(cb) {
     fs.unlink(fname, function (err){
       if(err) {
         console.log("unable to remove lock: %s", fname);
-        process.exit(1);
+        killProcess(1);
       } else {
         return cb();
       }
@@ -88,7 +94,9 @@ function is_locked(cb) {
 function exit() {
   remove_lock(function(){
     mongoose.disconnect();
-    process.exit(0);
+    if (!module.parent) {
+      killProcess(0);
+    }
   });
 }
 
@@ -97,7 +105,7 @@ function runScript() {
   is_locked(function (exists) {
     if (exists) {
       console.log("Script already running..");
-      process.exit(0);
+      killProcess(0);
     } else {
       create_lock(function (){
         console.log("script launched with pid: " + process.pid);
@@ -217,7 +225,7 @@ function exitHandler(options, exitCode) {
       fs.unlinkSync(fname);
       
     } finally {
-      process.exit(0);
+      killProcess(0);
     }    
 }
 

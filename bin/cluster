@@ -1,6 +1,8 @@
 var cluster = require('cluster');
 var fs = require('fs');
 
+const Services = require('./services');
+
 if (cluster.isMaster) {
   fs.writeFile('./tmp/cluster.pid', process.pid, function (err) {
     if (err) {
@@ -17,6 +19,8 @@ if (cluster.isMaster) {
         // exit the master process
         process.exit(0);
       });
+     
+      Services.initialize();
 
       // Count the machine's CPUs
       var cpuCount = require('os').cpus().length;
