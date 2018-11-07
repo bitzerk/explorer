@@ -26,7 +26,7 @@ process.on('message', msg => {
     isRunning = true;   
     blockchainIndexingService.run();
 
-    const updateTimeout = Settings.update_timeout || 125;
+    const updateTimeout = (Settings.update_timeout || 125) * 1000;
     setInterval(blockchainIndexingService.run, updateTimeout);
 });
 
