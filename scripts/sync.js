@@ -262,7 +262,7 @@ if(!module.parent) {
   } else {
     usage();
   }
-
+  runScript();
 }
 
 module.exports = {
