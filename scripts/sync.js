@@ -215,7 +215,7 @@ function runScript() {
 process.stdin.resume();//so the program will not close instantly
 
 function exitHandler(options, exitCode) {
-    remove_lock(); 
+  remove_lock(); 
 }
 
 //do something when app is closing
@@ -261,9 +261,10 @@ if(!module.parent) {
   }
   runScript();
 } else {
-  runScript();
+  try {
+    runScript();
+  } catch (err) {
+    console.error(err);
+    killProcess(-1);
+  }
 }
-
-module.exports = {
-  runScript
-};

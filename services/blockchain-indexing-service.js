@@ -15,6 +15,7 @@ blockchainIndexingService.run = function() {
         childProcess = ChildProcess.fork(__dirname + '/../scripts/sync.js');
         isRunning = true;
         childProcess.on('exit', msg => {
+            console.log('EXITING sync.js process');
             isRunning = false;
         });  
     } catch (err) {
