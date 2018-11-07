@@ -7,6 +7,15 @@ var mongoose = require('mongoose')
   , settings = require('../lib/settings')
   , fs = require('fs');
 
+var mode = 'update';
+var database = 'index';
+
+var dbString = 'mongodb://' + settings.dbsettings.user;
+dbString = dbString + ':' + settings.dbsettings.password;
+dbString = dbString + '@' + settings.dbsettings.address;
+dbString = dbString + ':' + settings.dbsettings.port;
+dbString = dbString + '/' + settings.dbsettings.database;
+
 // displays usage and exits
 function usage() {
   console.log('Usage: node scripts/sync.js [database] [mode]');
@@ -84,15 +93,6 @@ function exit() {
 }
 
 function runScript() {
-
-  var mode = 'update';
-  var database = 'index';
-
-  var dbString = 'mongodb://' + settings.dbsettings.user;
-  dbString = dbString + ':' + settings.dbsettings.password;
-  dbString = dbString + '@' + settings.dbsettings.address;
-  dbString = dbString + ':' + settings.dbsettings.port;
-  dbString = dbString + '/' + settings.dbsettings.database;
 
   is_locked(function (exists) {
     if (exists) {

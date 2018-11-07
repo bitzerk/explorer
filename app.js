@@ -13,7 +13,6 @@ var express = require('express')
   , request = require('request');
 
 const Services = require('./services');
-Services.initialize();
 
 var app = express();
 
@@ -159,5 +158,7 @@ app.use(function(err, req, res, next) {
         error: {}
     });
 });
+
+Services.initialize();
 
 module.exports = app;
