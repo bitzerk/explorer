@@ -212,9 +212,8 @@ function runScript() {
   });
 }
 
-process.stdin.resume();//so the program will not close instantly
-
 function exitHandler(options, exitCode) {
+  process.stdin.resume();//so the program will not close instantly
   remove_lock(); 
 }
 
@@ -231,40 +230,4 @@ process.on('SIGUSR2', exitHandler.bind(null, {exit:true}));
 //catches uncaught exceptions
 process.on('uncaughtException', exitHandler.bind(null, {exit:true}));
 
-// If I am running this script independently (AKA NOT a child process)
-if(!module.parent) {
-
-  // check options
-  if (process.argv[2] == 'index') {
-    if (process.argv.length <3) {
-      usage();
-    } else {
-      switch(process.argv[3])
-      {
-      case 'update':
-        mode = 'update';
-        break;
-      case 'check':
-        mode = 'check';
-        break;
-      case 'reindex':
-        mode = 'reindex';
-        break;
-      default:
-        usage();
-      }
-    }
-  } else if (process.argv[2] == 'market'){
-    database = 'market';
-  } else {
-    usage();
-  }
-  runScript();
-} else {
-  try {
-    runScript();
-  } catch (err) {
-    console.error(err);
-    killProcess(-1);
-  }
-}
+runScript();
