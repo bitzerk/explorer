@@ -7,9 +7,6 @@ var mongoose = require('mongoose')
   , settings = require('../lib/settings')
   , fs = require('fs');
 
-var mode = 'update';
-var database = 'index';
-
 // displays usage and exits
 function usage() {
   console.log('Usage: node scripts/sync.js [database] [mode]');
@@ -30,32 +27,6 @@ function usage() {
   console.log('  index_timeout in settings.json is set too low.')
   console.log('');
   process.exit(0);
-}
-
-// check options
-if (process.argv[2] == 'index') {
-  if (process.argv.length <3) {
-    usage();
-  } else {
-    switch(process.argv[3])
-    {
-    case 'update':
-      mode = 'update';
-      break;
-    case 'check':
-      mode = 'check';
-      break;
-    case 'reindex':
-      mode = 'reindex';
-      break;
-    default:
-      usage();
-    }
-  }
-} else if (process.argv[2] == 'market'){
-  database = 'market';
-} else {
-  usage();
 }
 
 function create_lock(cb) {
@@ -112,119 +83,188 @@ function exit() {
   });
 }
 
-var dbString = 'mongodb://' + settings.dbsettings.user;
-dbString = dbString + ':' + settings.dbsettings.password;
-dbString = dbString + '@' + settings.dbsettings.address;
-dbString = dbString + ':' + settings.dbsettings.port;
-dbString = dbString + '/' + settings.dbsettings.database;
+function runScript() {
 
-is_locked(function (exists) {
-  if (exists) {
-    console.log("Script already running..");
-    process.exit(0);
-  } else {
-    create_lock(function (){
-      console.log("script launched with pid: " + process.pid);
-      mongoose.connect(dbString, function(err) {
-        if (err) {
-          console.log('Unable to connect to database: %s', dbString);
-          console.log('Aborting');
-          exit();
-        } else if (database == 'index') {
-          db.check_stats(settings.coin, function(exists) {
-            if (exists == false) {
-              console.log('Run \'npm start\' to create database structures before running this script.');
-              exit();
-            } else {
-              db.update_db(settings.coin, function(){
-                db.get_stats(settings.coin, function(stats){
-                  if (settings.heavy == true) {
-                    db.update_heavy(settings.coin, stats.count, 20, function(){
-                    
-                    });
-                  }
-                  if (mode == 'reindex') {
-                    Tx.remove({}, function(err) { 
-                      Address.remove({}, function(err2) { 
-                        Richlist.update({coin: settings.coin}, {
-                          received: [],
-                          balance: [],
-                        }, function(err3) { 
-                          Stats.update({coin: settings.coin}, { 
-                            last: 0,
-                          }, function() {
-                            console.log('index cleared (reindex)');
-                          }); 
-                          db.update_tx_db(settings.coin, 1, stats.count, settings.update_timeout, function(){
-                            db.update_richlist('received', function(){
-                              db.update_richlist('balance', function(){
-                                db.get_stats(settings.coin, function(nstats){
-                                  console.log('reindex complete (block: %s)', nstats.last);
-                                  exit();
+  var mode = 'update';
+  var database = 'index';
+
+  var dbString = 'mongodb://' + settings.dbsettings.user;
+  dbString = dbString + ':' + settings.dbsettings.password;
+  dbString = dbString + '@' + settings.dbsettings.address;
+  dbString = dbString + ':' + settings.dbsettings.port;
+  dbString = dbString + '/' + settings.dbsettings.database;
+
+  is_locked(function (exists) {
+    if (exists) {
+      console.log("Script already running..");
+      process.exit(0);
+    } else {
+      create_lock(function (){
+        console.log("script launched with pid: " + process.pid);
+        mongoose.connect(dbString, function(err) {
+          if (err) {
+            console.log('Unable to connect to database: %s', dbString);
+            console.log('Aborting');
+            exit();
+          } else if (database == 'index') {
+            db.check_stats(settings.coin, function(exists) {
+              if (exists == false) {
+                console.log('Run \'npm start\' to create database structures before running this script.');
+                exit();
+              } else {
+                db.update_db(settings.coin, function(){
+                  db.get_stats(settings.coin, function(stats){
+                    if (settings.heavy == true) {
+                      db.update_heavy(settings.coin, stats.count, 20, function(){
+                      
+                      });
+                    }
+                    if (mode == 'reindex') {
+                      Tx.remove({}, function(err) { 
+                        Address.remove({}, function(err2) { 
+                          Richlist.update({coin: settings.coin}, {
+                            received: [],
+                            balance: [],
+                          }, function(err3) { 
+                            Stats.update({coin: settings.coin}, { 
+                              last: 0,
+                            }, function() {
+                              console.log('index cleared (reindex)');
+                            }); 
+                            db.update_tx_db(settings.coin, 1, stats.count, settings.update_timeout, function(){
+                              db.update_richlist('received', function(){
+                                db.update_richlist('balance', function(){
+                                  db.get_stats(settings.coin, function(nstats){
+                                    console.log('reindex complete (block: %s)', nstats.last);
+                                    exit();
+                                  });
                                 });
                               });
                             });
                           });
                         });
+                      });              
+                    } else if (mode == 'check') {
+                      db.update_tx_db(settings.coin, 1, stats.count, settings.check_timeout, function(){
+                        db.get_stats(settings.coin, function(nstats){
+                          console.log('check complete (block: %s)', nstats.last);
+                          exit();
+                        });
                       });
-                    });              
-                  } else if (mode == 'check') {
-                    db.update_tx_db(settings.coin, 1, stats.count, settings.check_timeout, function(){
-                      db.get_stats(settings.coin, function(nstats){
-                        console.log('check complete (block: %s)', nstats.last);
-                        exit();
-                      });
-                    });
-                  } else if (mode == 'update') {
-                    db.update_tx_db(settings.coin, stats.last, stats.count, settings.update_timeout, function(){
-                      db.update_richlist('received', function(){
-                        db.update_richlist('balance', function(){
-                          db.get_stats(settings.coin, function(nstats){
-                            console.log('update complete (block: %s)', nstats.last);
-                            exit();
+                    } else if (mode == 'update') {
+                      db.update_tx_db(settings.coin, stats.last, stats.count, settings.update_timeout, function(){
+                        db.update_richlist('received', function(){
+                          db.update_richlist('balance', function(){
+                            db.get_stats(settings.coin, function(nstats){
+                              console.log('update complete (block: %s)', nstats.last);
+                              exit();
+                            });
                           });
                         });
                       });
-                    });
-                  }
-                });
-              });
-            }
-          });
-        } else {
-          //update markets
-          var markets = settings.markets.enabled;
-          var complete = 0;
-          for (var x = 0; x < markets.length; x++) {
-            var market = markets[x];
-            db.check_market(market, function(mkt, exists) {
-              if (exists) {
-                db.update_markets_db(mkt, function(err) {
-                  if (!err) {
-                    console.log('%s market data updated successfully.', mkt);
-                    complete++;
-                    if (complete == markets.length) {
-                      exit();
                     }
-                  } else {
-                    console.log('%s: %s', mkt, err);
-                    complete++;
-                    if (complete == markets.length) {
-                      exit();
-                    }
-                  }
+                  });
                 });
-              } else {
-                console.log('error: entry for %s does not exists in markets db.', mkt);
-                complete++;
-                if (complete == markets.length) {
-                  exit();
-                }
               }
             });
+          } else {
+            //update markets
+            var markets = settings.markets.enabled;
+            var complete = 0;
+            for (var x = 0; x < markets.length; x++) {
+              var market = markets[x];
+              db.check_market(market, function(mkt, exists) {
+                if (exists) {
+                  db.update_markets_db(mkt, function(err) {
+                    if (!err) {
+                      console.log('%s market data updated successfully.', mkt);
+                      complete++;
+                      if (complete == markets.length) {
+                        exit();
+                      }
+                    } else {
+                      console.log('%s: %s', mkt, err);
+                      complete++;
+                      if (complete == markets.length) {
+                        exit();
+                      }
+                    }
+                  });
+                } else {
+                  console.log('error: entry for %s does not exists in markets db.', mkt);
+                  complete++;
+                  if (complete == markets.length) {
+                    exit();
+                  }
+                }
+              });
+            }
           }
-        }
+        });
       });
-    });
+    }
+  });
+}
+
+process.stdin.resume();//so the program will not close instantly
+
+function exitHandler(options, exitCode) {
+    try {
+
+      var fname = './tmp/' + database + '.pid';
+
+      // Delete the damn .pid lock!
+      fs.unlinkSync(fname);
+      
+    } finally {
+      process.exit(0);
+    }    
+}
+
+//do something when app is closing
+process.on('exit', exitHandler.bind(null,{cleanup:true}));
+
+//catches ctrl+c event
+process.on('SIGINT', exitHandler.bind(null, {exit:true}));
+
+// catches "kill pid" (for example: nodemon restart)
+process.on('SIGUSR1', exitHandler.bind(null, {exit:true}));
+process.on('SIGUSR2', exitHandler.bind(null, {exit:true}));
+
+//catches uncaught exceptions
+process.on('uncaughtException', exitHandler.bind(null, {exit:true}));
+
+// If I am running this script independently (AKA NOT a child process)
+if(!module.parent) {
+
+  // check options
+  if (process.argv[2] == 'index') {
+    if (process.argv.length <3) {
+      usage();
+    } else {
+      switch(process.argv[3])
+      {
+      case 'update':
+        mode = 'update';
+        break;
+      case 'check':
+        mode = 'check';
+        break;
+      case 'reindex':
+        mode = 'reindex';
+        break;
+      default:
+        usage();
+      }
+    }
+  } else if (process.argv[2] == 'market'){
+    database = 'market';
+  } else {
+    usage();
   }
-});
+
+}
+
+module.exports = {
+  runScript
+};

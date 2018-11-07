@@ -44,6 +44,9 @@
   "update_timeout": 10,
   "check_timeout": 250,
 
+  // Creates a fork process to handle updates, rather than cron jobs
+  "autoUpdateFork": true,
+
   // wallet settings
   "wallet": {
     "host": "localhost",
