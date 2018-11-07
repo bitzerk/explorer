@@ -16,7 +16,7 @@ services.initialize = function() {
     console.log('Forking Blockchain Indexing Service...')
 
     blockchainIndexingService = ChildProcess.fork(__dirname + '/blockchain-indexing-service.js');
-    blockchainIndexingService.emit('INIT');   
+    blockchainIndexingService.send('INIT');   
 };
 
 
