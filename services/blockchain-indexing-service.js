@@ -1,21 +1,24 @@
 const Settings = require('../lib/settings');
+const ChildProcess = require('child_process');
 const SyncScript = require('../scripts/sync');
 
 const blockchainIndexingService = {};
 
 let isRunning = false;
+let childProcess = null;
 
 blockchainIndexingService.run = function() {
     try {
         if(isRunning) {
             return;
         }
+        childProcess = ChildProcess.fork(__dirname + '/../scripts/sync.js');
         isRunning = true;
-        SyncScript.runScript();
+        childProcess.on('exit', msg => {
+            isRunning = false;
+        });  
     } catch (err) {
         console.error(err);
-    } finally {
-        isRunning = false;
     }
 };
 

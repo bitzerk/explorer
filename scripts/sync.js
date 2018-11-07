@@ -17,9 +17,7 @@ dbString = dbString + ':' + settings.dbsettings.port;
 dbString = dbString + '/' + settings.dbsettings.database;
 
 function killProcess(exitCode=0) {
-  if(!module.parent) {
-    process.exit(exitCode);
-  }
+  process.exit(exitCode);
 }
 
 // displays usage and exits
@@ -217,16 +215,7 @@ function runScript() {
 process.stdin.resume();//so the program will not close instantly
 
 function exitHandler(options, exitCode) {
-    try {
-
-      var fname = './tmp/' + database + '.pid';
-
-      // Delete the damn .pid lock!
-      fs.unlinkSync(fname);
-      
-    } finally {
-      killProcess(0);
-    }    
+    remove_lock(); 
 }
 
 //do something when app is closing
@@ -270,6 +259,8 @@ if(!module.parent) {
   } else {
     usage();
   }
+  runScript();
+} else {
   runScript();
 }
 
