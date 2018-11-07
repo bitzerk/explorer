@@ -1,7 +1,7 @@
 var cluster = require('cluster');
 var fs = require('fs');
 
-const Services = require('./services');
+const Services = require('../services');
 
 if (cluster.isMaster) {
   fs.writeFile('./tmp/cluster.pid', process.pid, function (err) {
