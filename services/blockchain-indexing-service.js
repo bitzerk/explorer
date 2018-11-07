@@ -10,6 +10,7 @@ blockchainIndexingService.run = function() {
         if(isRunning) {
             return;
         }
+        isRunning = true;
         SyncScript.runScript();
     } catch (err) {
         console.error(err);
@@ -23,7 +24,6 @@ process.on('message', msg => {
         return;
     }
 
-    isRunning = true;   
     blockchainIndexingService.run();
 
     const updateTimeout = (Settings.update_timeout || 125) * 1000;
